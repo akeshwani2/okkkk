@@ -2,7 +2,7 @@ import { ImageResponse } from "next/og";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../../../../firebaseConfig";
 import { cutString, getReadingTimeInMinutes } from "@/utils/utils";
-
+import Image from "next/image";
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -45,7 +45,12 @@ export async function GET(request: Request) {
 
     if (!chatThread) {
       return new ImageResponse(
-        <img width="1200" height="630" src="https://omniplex.ai/OGImage.png" />,
+        <Image
+          width="1200"
+          height="630"
+          alt="OG Image"
+          src="https://omniplex.ai/OGImage.png"
+        />,
         {
           width: 1200,
           height: 630,

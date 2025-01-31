@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useMemo } from "react";
 import styles from "./Chat.module.css";
 import Source from "../Source/Source";
 import Answer from "../Answer/Answer";
@@ -62,117 +62,6 @@ const Chat = (props: Props) => {
     setIsCompleted,
   });
 
-  // Production Code
-  // const [lastProcessedIndex, setLastProcessedIndex] = useState<number | null>(
-  //   null
-  // );
-
-  // useEffect(() => {
-  //   const processChatThread = async () => {
-  //     if (!chatThread || chatThread.chats.length === 0) return;
-  //     const lastChatIndex = chatThread.chats.length - 1;
-  //     const lastChat = chatThread.chats[lastChatIndex];
-
-  //     if (lastProcessedIndex === lastChatIndex) return;
-  //     if (!lastChat.mode) {
-  //       try {
-  //         const { mode, arg } = await handleMode(lastChat.question);
-  //         let parsedArg;
-  //         try {
-  //           parsedArg = arg ? JSON.parse(arg) : {};
-  //         } catch (parseError) {
-  //           console.error("Damn determining mode and arguments:", error);
-  //         }
-
-  //         dispatch(
-  //           updateMode({
-  //             threadId: id,
-  //             chatIndex: lastChatIndex,
-  //             mode: mode,
-  //             arg: parsedArg,
-  //           })
-  //         );
-  //       } catch (error) {
-  //         setError("Error determining mode and arguments");
-  //         setErrorFunction(() => handleMode.bind(null, lastChat.question));
-  //       }
-  //       return;
-  //     }
-
-  //     if (lastChat.mode === "weather" && !lastChat.weatherResults) {
-  //       try {
-  //         console.log("lastChat.arg.location", lastChat.arg.location);
-  //         await handleWeather(lastChat.arg.location, lastChatIndex);
-  //       } catch (error) {
-  //         setError("Error fetching or processing search results");
-  //         setErrorFunction(() =>
-  //           handleWeather.bind(null, lastChat.arg.location, lastChatIndex)
-  //         );
-  //         return;
-  //       }
-  //     }
-
-  //     if (lastChat.mode === "stock" && !lastChat.stocksResults) {
-  //       try {
-  //         console.log("lastChat.arg.symbol", lastChat.arg.symbol);
-  //         await handleStock(lastChat.arg.symbol, lastChatIndex);
-  //       } catch (error) {
-  //         setError("Error fetching or processing search results");
-  //         setErrorFunction(() =>
-  //           handleStock.bind(null, lastChat.arg.symbol, lastChatIndex)
-  //         );
-  //         return;
-  //       }
-  //     }
-
-  //     if (lastChat.mode === "dictionary" && !lastChat.dictionaryResults) {
-  //       try {
-  //         console.log("lastChat.arg.word", lastChat.arg.symbol);
-  //         await handleDictionary(lastChat.arg.word, lastChatIndex);
-  //       } catch (error) {
-  //         setError("Error fetching or processing dictionary results");
-  //         setErrorFunction(() =>
-  //           handleDictionary.bind(null, lastChat.arg.word, lastChatIndex)
-  //         );
-  //         return;
-  //       }
-  //     }
-
-  //     if (lastChat.mode === "search" && !lastChat.searchResults) {
-  //       try {
-  //         await handleSearch(lastChatIndex);
-  //       } catch (error) {
-  //         setError("Error fetching or processing search results");
-  //         setErrorFunction(() => handleSearch.bind(null, lastChatIndex));
-  //         return;
-  //       }
-  //     }
-
-  //     if (
-  //       (lastChat.mode === "chat" || lastChat.mode === "image") &&
-  //       !lastChat.answer
-  //     ) {
-  //       try {
-  //         await handleAnswer(lastChat);
-  //       } catch (error) {
-  //         console.error("Error generating answer:", error);
-  //       }
-  //     } else if (lastChat.answer) {
-  //       setIsLoading(false);
-  //       setIsCompleted(true);
-  //     }
-
-  //     setLastProcessedIndex(lastChatIndex);
-  //   };
-
-  //   processChatThread();
-  // }, [
-  //   chatThread?.chats.length,
-  //   chatThread?.chats[chatThread?.chats.length - 1]?.mode,
-  //   chatThread?.chats[chatThread?.chats.length - 1]?.searchResults,
-  //   chatThread?.chats[chatThread?.chats.length - 1]?.answer,
-  // ]);
-
   // Development Code
   const lastProcessedChatRef = useRef<number>(0);
   const chatIdCounterRef = useRef<number>(0);
@@ -187,7 +76,9 @@ const Chat = (props: Props) => {
         if (lastChatId !== lastProcessedChatRef.current) {
           if (!lastChat.mode) {
             try {
+              console.log("Determining mode for question:", lastChat.question);
               const { mode, arg } = await handleMode(lastChat.question);
+              console.log("Received mode:", mode, "arg:", arg);
               let parsedArg;
               try {
                 parsedArg = arg ? JSON.parse(arg) : {};
@@ -319,7 +210,7 @@ const Chat = (props: Props) => {
         );
         setError("");
 
-        const data = searchData?.data?.webPages?.value?.slice(0, 3);
+        const data = searchData?.data?.webPages?.value?.slice(0, 4);
         if (!data || data.length === 0) {
           throw new Error("No valid search results found to scrape.");
         }
@@ -397,7 +288,7 @@ const Chat = (props: Props) => {
         );
 
         if (!response.ok) {
-          throw new Error("Failed to fetch weather data");
+          throw new Error("Failed to fetch stock data");
         }
 
         const stocksData = await response.json();
@@ -470,6 +361,44 @@ const Chat = (props: Props) => {
       dispatch(addChat({ threadId: id, chat: newChat }));
     }
   };
+
+  const lastAnswer = chatThread?.chats[chatThread.chats.length - 1]?.answer;
+  const processedAnswer = useMemo(() => {
+    let answer = chatThread?.chats[chatThread.chats.length - 1].answer;
+    
+    // Extract and wrap terminal blocks
+    answer = answer?.replace(/```terminal\n(DRAFT_CONTENT|SEND_CONTENT): ([\s\S]*?)\n```/g, (match, type, content) => {
+      const blockType = type === 'DRAFT_CONTENT' ? 'draft' : 'send';
+      return `<TerminalBlock type="${blockType}">${content}</TerminalBlock>`;
+    });
+
+    return answer;
+  }, [lastAnswer]);
+
+  const TerminalBlock = ({ type, children }: { type: 'draft' | 'send', children: string }) => {
+    const header = type === 'draft' ? '📝 Email Draft Preview' : '📤 Ready to Send';
+    const icon = type === 'draft' ? '✏️' : '🚀';
+
+    return (
+      <pre className={styles.terminalBlock}>
+        <div className={styles.terminalHeader}>
+          <span className={styles.terminalIcon}>{icon}</span>
+          {header}
+        </div>
+        <code className={styles.terminalContent}>
+          {children}
+        </code>
+      </pre>
+    );
+  };
+
+  useEffect(() => {
+    if (isLoading) {
+      console.log('Loading state active');
+      console.log('Chat thread:', chatThread);
+      console.log('Current mode:', chatThread?.chats[chatThread.chats.length - 1]?.mode);
+    }
+  }, [isLoading, chatThread]);
 
   if (isFetching) {
     return (

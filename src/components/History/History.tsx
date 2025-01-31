@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import styles from "./History.module.css";
 import Image from "next/image";
 import Auth from "../Auth/Auth";
@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { Skeleton } from "@nextui-org/skeleton";
 import { useDisclosure } from "@nextui-org/modal";
 import { ScrollShadow } from "@nextui-org/scroll-shadow";
+import Logo from "../../../public/Logo.svg";
 import {
   formatTimestamp,
   getRelativeDateLabel,
@@ -28,8 +29,8 @@ import { db } from "../../../firebaseConfig";
 
 import Pen from "../../../public/svgs/Pen.svg";
 import Bin from "../../../public/svgs/Bin.svg";
-import ChatInactive from "../../../public/svgs/sidebar/Chat_Inactive.svg";
-
+// import ChatBubble from "../../../public/svgs/ChatBubble.svg";
+import ChatBubbleInactive from "../../../public/svgs/ChatBubbleInactive.svg";
 interface ChatThreadWithTimestamp extends ChatThread {
   createdAt: Timestamp;
 }
@@ -43,11 +44,7 @@ const History = () => {
   const [deleting, setDeleting] = useState(false);
   const [chatHistory, setChatHistory] = useState<ChatThreadWithTimestamp[]>([]);
 
-  useEffect(() => {
-    fetchChatHistory();
-  }, [isAuthenticated, userDetails.uid]);
-
-  const fetchChatHistory = async () => {
+  const fetchChatHistory = useCallback(async () => {
     if (isAuthenticated && userDetails.uid) {
       setLoading(true);
       const historyRef = collection(db, "users", userDetails.uid, "history");
@@ -63,7 +60,11 @@ const History = () => {
       setChatHistory([]);
       setLoading(false);
     }
-  };
+  }, [isAuthenticated, userDetails.uid]);
+
+  useEffect(() => {
+    fetchChatHistory();
+  }, [fetchChatHistory]);
 
   const handleDelete = async (threadId: string) => {
     if (isAuthenticated && userDetails.uid) {
@@ -112,11 +113,11 @@ const History = () => {
           ) : chatHistory.length === 0 ? (
             <div className={styles.emptyState}>
               <Image
-                src={ChatInactive}
+                src={ChatBubbleInactive}
                 alt="Chat Empty"
-                className={styles.emptyStateIcon}
+                className="w-24 h-24"
               />
-              <p className={styles.emptyStateText}>No Chat History</p>
+              <p className={styles.emptyStateText}>No Chats with Sunday</p>
             </div>
           ) : (
             chatHistory.map((item, index, array) => {
@@ -139,7 +140,7 @@ const History = () => {
                     {cutString(item.chats[0].question, 24)}
                     {deleting ? (
                       <div className={styles.spinner}>
-                        <SpinnerWhite />
+                        <Image src={Logo} alt="Logo" width={20} height={20} />
                       </div>
                     ) : (
                       <Image

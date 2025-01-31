@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import styles from "./Library.module.css";
 import Image from "next/image";
 import Auth from "../Auth/Auth";
@@ -10,6 +10,7 @@ import { getRelativeDateLabel, cutString } from "@/utils/utils";
 import { LibraryItem } from "@/utils/types";
 import { useSelector } from "react-redux";
 import { selectAuthState, selectUserDetailsState } from "../../store/authSlice";
+import Logo from "../../../public/Logo.svg";
 import {
   collection,
   query,
@@ -22,6 +23,7 @@ import { db } from "../../../firebaseConfig";
 
 import Bin from "../../../public/svgs/Bin.svg";
 import FolderInactive from "../../../public/svgs/sidebar/Folder_Inactive.svg";
+import NoDoc from "../../../public/svgs/sidebar/NoDoc.svg";
 
 const Library = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -31,11 +33,7 @@ const Library = () => {
   const [deleting, setDeleting] = useState(false);
   const [libraryData, setLibraryData] = useState<LibraryItem[]>([]);
 
-  useEffect(() => {
-    fetchLibraryData();
-  }, [isAuthenticated, userDetails.uid]);
-
-  const fetchLibraryData = async () => {
+  const fetchLibraryData = useCallback(async () => {
     if (isAuthenticated && userDetails.uid) {
       setLoading(true);
       const libraryRef = collection(db, "users", userDetails.uid, "library");
@@ -51,7 +49,11 @@ const Library = () => {
       setLibraryData([]);
       setLoading(false);
     }
-  };
+  }, [isAuthenticated, userDetails.uid]);
+
+  useEffect(() => {
+    fetchLibraryData();
+  }, [fetchLibraryData]);
 
   const handleDelete = async (itemId: string) => {
     if (isAuthenticated && userDetails.uid) {
@@ -69,7 +71,7 @@ const Library = () => {
   return (
     <div className={styles.list}>
       <div className={styles.titleContainer}>
-        <div className={styles.title}>Documents</div>
+        <div className={styles.title}>Files</div>
       </div>
       <ScrollShadow hideScrollBar className="h-[calc(100vh_-_50px)] w-full">
         <div className={styles.listContainer}>
@@ -90,11 +92,11 @@ const Library = () => {
           ) : libraryData.length === 0 ? (
             <div className={styles.emptyState}>
               <Image
-                src={FolderInactive}
+                src={NoDoc}
                 alt="Folder Empty"
                 className={styles.emptyStateIcon}
               />
-              <p className={styles.emptyStateText}>No Documents Uploaded</p>
+              <p className={styles.emptyStateText}>No Files Uploaded Yet</p>
             </div>
           ) : (
             libraryData.map((item, index, array) => {
@@ -111,7 +113,7 @@ const Library = () => {
                     {cutString(item.name, 24)}
                     {deleting ? (
                       <div className={styles.spinner}>
-                        <SpinnerWhite />
+                        <Image src={Logo} alt="Spinner" height={20} width={20} />
                       </div>
                     ) : (
                       <Image

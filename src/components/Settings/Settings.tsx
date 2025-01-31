@@ -69,7 +69,10 @@ const Settings = () => {
       aiCustomPrompt !== customPrompt.trim();
 
     setHasChanges(isChanged);
-  }, [model, temperature, maxLength, topP, frequency, presence, customPrompt]);
+  }, [
+    model, temperature, maxLength, topP, frequency, presence, customPrompt,
+    aiModel, aiTemperature, aiMaxLength, aiTopP, aiFrequency, aiPresence, aiCustomPrompt
+  ]);
 
   useEffect(() => {
     setModelLocal(aiModel);
@@ -117,7 +120,7 @@ const Settings = () => {
   return (
     <div className={styles.list}>
       <div className={styles.titleContainer}>
-        <div className={styles.title}>Settings</div>
+        <div className={styles.title}>AI Models</div>
         <div
           className={styles.titleButtonRow}
           style={{ opacity: hasChanges ? 1 : 0 }}
@@ -133,10 +136,10 @@ const Settings = () => {
       <ScrollShadow hideScrollBar className="h-[calc(100vh_-_50px)] w-full">
         <div className={styles.listContainer}>
           <div className={styles.listRow}>
-            <div className={styles.listHeader}>Model</div>
-            <Tooltip
-              content="For Images, we only use GPT-4o"
-              color={"warning"}
+            <div className={styles.listHeader}>Models</div>
+            {/* <Tooltip
+              content="Images are only supported with GPT-4o"
+              color={"danger"}
               placement={"bottom-end"}
               className={styles.tooltip}
             >
@@ -147,7 +150,7 @@ const Settings = () => {
                 height={16}
                 className={styles.tooltipIcon}
               />
-            </Tooltip>
+            </Tooltip> */}
           </div>
           <Select
             value={model}
@@ -178,7 +181,7 @@ const Settings = () => {
               </SelectItem>
             ))}
           </Select>
-          <div className={styles.listRow}>
+          {/* <div className={styles.listRow}>
             <div className={styles.listHeader}>Temperature</div>
             <div className={styles.listHeader}>{temperature}</div>
           </div>
@@ -257,8 +260,8 @@ const Settings = () => {
             color="foreground"
             className={styles.slider}
             renderThumb={(props) => <div {...props} className={styles.thumb} />}
-          />
-          <div className={styles.listHeader}>Custom Prompt</div>
+          /> */}
+          {/* <div className={styles.listHeader}>Custom Prompt</div>
           <div className={styles.textareaContainer}>
             <textarea
               value={customPrompt}
@@ -266,16 +269,14 @@ const Settings = () => {
               className={styles.textarea}
               placeholder="Write your prompt here..."
             />
-          </div>
+          </div> */}
         </div>
       </ScrollShadow>
       {!isAuthenticated && (
         <div className={styles.modalOverlay}>
-          {!isAuthenticated && (
-            <div className={styles.modalButton} onClick={() => handleModal()}>
-              Sign In
-            </div>
-          )}
+          <div className={styles.modalButton} style={{ marginBottom: 11.5}} onClick={() => handleModal()}>
+            Sign In
+          </div>
         </div>
       )}
       <Auth isOpen={isOpen} onClose={onClose} />
